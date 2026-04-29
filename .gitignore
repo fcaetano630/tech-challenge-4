@@ -1,0 +1,31 @@
+# Ambiente Virtual
+venv/
+.venv/
+env/
+
+# Python (arquivos temporários)
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+
+# Deep Learning / YOLO
+# Não suba o dataset inteiro (é muito pesado para o GitHub)
+dataset_medico/
+dataset_medico.rar
+
+# Não suba as pastas de resultados de treino (runs)
+runs/
+detect/
+
+# Modelos (Opcional)
+# Se o seu best.pt for maior que 100MB, o GitHub vai bloquear.
+# O YOLOv8n costuma ter 6MB, então você PODE subir ele se quiser,
+# mas arquivos .pt grandes devem ficar fora.
+# *.pt
+
+# IDEs e Sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
