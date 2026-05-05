@@ -29,3 +29,4 @@ detect/
 .idea/
 .DS_Store
 Thumbs.db
+.env
