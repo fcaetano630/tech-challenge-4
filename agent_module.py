@@ -22,31 +22,44 @@ class HospitalAgent:
             token=hf_token
         )
 
-    def analisar_atendimento(self, texto_whisper, objetos_yolo):
+    def analisar_atendimento(self, texto_whisper, objetos_yolo_imagem, objetos_yolo_video=None):
         print("🧠 Analisando conformidade e riscos...")
         
+        objetos_yolo_video = objetos_yolo_video or []
+        todos_objetos = objetos_yolo_imagem + objetos_yolo_video
+
         # 1. Análise de Sentimento (focada em detectar tensão/medo)
-        # Limitamos o texto para evitar erros de tamanho de token no modelo
         analise_sentimento = self.sentiment_task(texto_whisper, truncation=True, max_length=128)[0]
         
         # 2. Cruzamento Multimodal (O que foi dito vs O que foi visto)
-        # Itens críticos mencionados na videoaula de Papanicolaou
-        obrigatorios = [ "Speculum", "Slide", "Glove", "Cervical Brush", "Ayre Spatula", "Pozzi Forceps", "Kelly Forceps", "Cheron Forceps", "Needle Holder","Straight Mayo Scissor", "Straight Dissection Clamp"]
-        vistos = [obj for obj in objetos_yolo if obj in obrigatorios]
+        obrigatorios = [ "Speculum", "Slide", "Glove", "Cervical Brush", "Ayre Spatula", "Pozzi Forceps", "Kelly Forceps", "Cheron Forceps", "Needle Holder", "Straight Mayo Scissor", "Straight Dissection Clamp"]
+        vistos = [obj for obj in set(todos_objetos) if obj in obrigatorios]
         faltantes = list(set(obrigatorios) - set(vistos))
 
         # 3. Detecção de Alertas de Saúde (Anomalias)
         alertas = []
-        termos_risco = ["sangramento", "lesão", "dor", "medo", "ansiedade", "agressão", "casa", "machucado", "briga", "forçou"]
+        termos_risco = ["sangramento", "lesão", "dor", "medo", "ansiedade", "agressão", "casa", "machucado", "briga", "forçou", "trauma", "ansiosa"]
         
         for termo in termos_risco:
             if termo in texto_whisper.lower():
                 alertas.append(f"🚨 ALERTA: Identificado termo de atenção: '{termo}'")
 
-        # 4. Construção do Relatório Final
+        if objetos_yolo_video and any(termo in texto_whisper.lower() for termo in termos_risco):
+            alertas.append("🚨 ALERTA: Sinais verbais de risco alinhados a detecções visuais no vídeo.")
+
+        if not objetos_yolo_video:
+            alertas.append("⚠️ Vídeo analisado não apresentou instrumentos detectados, verifique a qualidade do vídeo ou possível anomalia no procedimento.")
+
+        resumo_video = (
+            f"Classes detectadas no vídeo: {', '.join(sorted(set(objetos_yolo_video)))}."
+            if objetos_yolo_video else
+            "Nenhum instrumento detectado no vídeo."
+        )
+
         return {
-            "Conformidade Técnica": "✅ OK" if not faltantes else f"⚠️ ATENÇÃO: Itens não detectados visualmente: {faltantes}",
+            "Conformidade Técnica": "✅ OK" if not faltantes else f"⚠️ ATENÇÃO: Itens críticos não detectados visualmente: {faltantes}",
             "Análise Emocional": f"{analise_sentimento['label']} (Score: {analise_sentimento['score']:.2f})",
+            "Análise de Vídeo": resumo_video,
             "Alertas de Saúde": alertas if alertas else ["Nenhuma anomalia crítica detectada."],
             "Resumo": "Processamento concluído com base no protocolo de saúde da mulher."
         }

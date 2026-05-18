@@ -70,6 +70,44 @@ class InstrumentDetector:
             
             print(f"📂 Imagem salva em: data/results/{arquivo}\n" + "-"*40)
 
+    def analisar_video(self, caminho_video):
+        """
+        Analisa um vídeo clínico em busca de instrumentos e salva o resultado anotado.
+        """
+        if not os.path.exists(caminho_video):
+            raise FileNotFoundError(f"❌ Vídeo não encontrado: {caminho_video}")
+
+        caminho_base = os.path.abspath(os.path.dirname(__file__))
+        pasta_saida = os.path.join(caminho_base, 'data', 'results', 'video_results')
+        os.makedirs(pasta_saida, exist_ok=True)
+
+        print(f"🎥 Iniciando análise de vídeo: {os.path.basename(caminho_video)}")
+        results = self.model.predict(
+            source=caminho_video,
+            conf=0.5,
+            save=True,
+            project=os.path.join(caminho_base, 'data'),
+            name='video_results',
+            exist_ok=True
+        )
+
+        objetos_detectados = []
+        for r in results:
+            for box in r.boxes:
+                nome_classe = r.names[int(box.cls[0])]
+                objetos_detectados.append(nome_classe)
+
+        resumo_contagem = Counter(objetos_detectados)
+        print(f"📊 Resultado para o vídeo: {os.path.basename(caminho_video)}")
+        if not resumo_contagem:
+            print("   ➔ Nenhum instrumento identificado no vídeo.")
+        else:
+            for instrumento, qtd in resumo_contagem.items():
+                print(f"   ➔ {instrumento}: {qtd}")
+
+        print(f"📂 Vídeo anotado salvo em: data/results/video_results\n" + "-"*40)
+        return objetos_detectados
+
 # --- EXECUÇÃO DO SCRIPT ---
 if __name__ == "__main__":
     try:
