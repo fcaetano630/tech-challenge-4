@@ -16,7 +16,7 @@ def executar_fluxo_multimodal():
     print("🏥 INICIANDO SISTEMA MULTIMODAL - TECH CHALLENGE 4".center(60))
     print("="*60)
 
-    # Ensure ffmpeg is discoverable by subprocess calls (used by Whisper)
+    # Garantir que o ffmpeg esteja instalado e funcional (usado pelo Whisper)
     def ensure_ffmpeg_on_path():
         if shutil.which('ffmpeg'):
             return True
@@ -83,20 +83,33 @@ def executar_fluxo_multimodal():
     else:
         print("⚠️ Nenhuma imagem encontrada em 'data/images'.")
 
-    # 5. Análise do Agente (Hugging Face)
-    print("\n🧠 [AGENT] Cruzando dados e gerando relatório final...")
-    relatorio = agente.analisar_atendimento(transcricao_final, objetos_encontrados, objetos_video)
+    # 5. Análise do Agente (Hugging Face) - COM ANÁLISE ESPECIALIZADA DE SAÚDE FEMININA
+    print("\n🧠 [AGENT] Cruzando dados e gerando relatório final com análise especializada...")
+    
+    # Análise comportamental visual (simulada para demo)
+    comportamento_observado = "paciente colaborativa, contato visual normal"  # Pode ser expandido com visão computacional real
+    
+    relatorio = agente.analisar_atendimento(
+        transcricao_final, 
+        objetos_encontrados, 
+        objetos_video,
+        comportamento_visual=comportamento_observado
+    )
 
     # 5. Output Final
-    print("\n" + "📋 RELATÓRIO DE CONFORMIDADE MÉDICA".center(60))
+    print("\n" + "📋 RELATÓRIO DE CONFORMIDADE CLÍNICA - SAÚDE DA MULHER".center(60))
     print("-" * 60)
     print(f"✅ STATUS TÉCNICO: {relatorio['Conformidade Técnica']}")
     print(f"🎭 ANÁLISE EMOCIONAL: {relatorio['Análise Emocional']}")
+    print(f"🤰 DEPRESSÃO PÓS-PARTO: {relatorio['Depressão Pós-Parto']}")
+    print(f"🚨 RISCO DE VIOLÊNCIA: {relatorio['Risco de Violência']}")
+    print(f"⚕️ COMPLICAÇÕES CLÍNICAS: {relatorio['Complicações Clínicas']}")
     print(f"🎬 ANÁLISE DE VÍDEO: {relatorio['Análise de Vídeo']}")
-    print(f"📝 RESUMO: {relatorio['Resumo']}")
+    print(f"🔴 PRIORIDADE DE ATENDIMENTO: {relatorio['Prioridade de Atendimento']}")
+    print(f"📊 SCORE RISCO TOTAL: {relatorio['Score Risco Total']}")
     print("\n🚨 ALERTAS DE SEGURANÇA:")
     for alerta in relatorio['Alertas de Saúde']:
-        print(f"  - {alerta}")
+        print(f"  {alerta}")
     print("-" * 60)
     print("🎯 Processamento Multimodal Concluído.")
 
