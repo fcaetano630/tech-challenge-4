@@ -43,6 +43,17 @@ class MedicalAudioAnalyzer:
             except Exception as e:
                 print(f"❌ Erro ao processar {arquivo}: {e}")
 
+    def transcrever_video(self, caminho_video):
+        if not os.path.exists(caminho_video):
+            raise FileNotFoundError(f"❌ Arquivo de vídeo não encontrado: {caminho_video}")
+
+        print(f"🎤 Transcrevendo vídeo: {os.path.basename(caminho_video)}")
+        result = self.model.transcribe(caminho_video, language="pt", fp16=False)
+        texto = result.get('text', '').strip()
+        print(f"📝 Texto extraído: '{texto}'")
+        return texto
+
 if __name__ == "__main__":
+
     analyzer = MedicalAudioAnalyzer()
     analyzer.processar_todos_os_videos()

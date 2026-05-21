@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 
 # Importando as classes exatamente como você as definiu
 try:
@@ -15,6 +16,28 @@ def executar_fluxo_multimodal():
     print("🏥 INICIANDO SISTEMA MULTIMODAL - TECH CHALLENGE 4".center(60))
     print("="*60)
 
+    # Garantir que o ffmpeg esteja instalado e funcional (usado pelo Whisper)
+    def ensure_ffmpeg_on_path():
+        if shutil.which('ffmpeg'):
+            return True
+        candidates = [
+            os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Microsoft', 'WinGet', 'Packages', 'Gyan.FFmpeg_Microsoft.WinGet.Source_8wekyb3d8bbwe', 'ffmpeg-8.1.1-full_build', 'bin'),
+            os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Programs', 'ffmpeg', 'bin'),
+            os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Programs', 'Gyan', 'ffmpeg', 'bin'),
+            os.path.join(os.environ.get('ProgramFiles', ''), 'ffmpeg', 'bin'),
+            'C:\\ffmpeg\\bin',
+        ]
+        for p in candidates:
+            ff = os.path.join(p, 'ffmpeg.exe')
+            if os.path.exists(ff):
+                os.environ['PATH'] = p + os.pathsep + os.environ.get('PATH', '')
+                print(f"✅ Adicionado ffmpeg ao PATH a partir de: {p}")
+                return True
+        print("⚠️ ffmpeg não encontrado em locais comuns. Instale ffmpeg ou adicione-o ao PATH.")
+        return False
+
+    ensure_ffmpeg_on_path()
+
     # 1. Instanciando os Módulos
     try:
         audio_analyser = MedicalAudioAnalyzer(model_size="base")
@@ -25,23 +48,27 @@ def executar_fluxo_multimodal():
         return
 
     # 2. Processamento de Áudio (Whisper)
-    # Como seu código processa a pasta 'data/videos', vamos pegar o resultado
-    print("\n🎤 [AUDIO] Transcrevendo arquivos em 'data/videos'...")
-    # Dica: No seu audio_module.py, faça o método retornar o texto. 
-    # Por enquanto, vamos simular a captura do resultado do vídeo de Papanicolaou:
-    caminho_video = os.path.join(os.getcwd(), 'data', 'videos', 'Instrução Prática Para Coleta de Papanicolaou [jX8aDMQD8j4].mp4')
-    
-    if os.path.exists(caminho_video):
-        # Aqui chamamos o modelo diretamente para pegar o texto para o Agente
-        res = audio_analyser.model.transcribe(caminho_video, language="pt", fp16=False)
-        transcricao_final = res['text']
-    else:
-        print("⚠️ Vídeo específico não encontrado para análise do Agente.")
+    print("\n🎤 [AUDIO] Transcrevendo vídeo em 'data/videos'...")
+    pasta_videos = os.path.join(os.getcwd(), 'data', 'videos')
+    arquivos_videos = [f for f in os.listdir(pasta_videos) if f.lower().endswith(('.mp4', '.mkv', '.avi', '.mov'))]
+
+    if not arquivos_videos:
+        print("⚠️ Nenhum vídeo encontrado em 'data/videos'.")
         return
 
-    # 3. Processamento de Visão (YOLO)
+    caminho_video = os.path.join(pasta_videos, arquivos_videos[0])
+    transcricao_final = audio_analyser.transcrever_video(caminho_video)
+
+    # 3. Processamento de Visão em Vídeo (YOLO)
+    print("\n🎥 [VIDEO] Analisando o vídeo para detecção de instrumentos...")
+    try:
+        objetos_video = vision_detector.analisar_video(caminho_video)
+    except Exception as e:
+        print(f"❌ Erro na análise do vídeo: {e}")
+        objetos_video = []
+
+    # 4. Processamento de Visão em Imagens (YOLO)
     print("\n👁️ [VISION] Detectando instrumentos em 'data/images'...")
-    # Vamos capturar os objetos detectados na primeira imagem da pasta
     pasta_imagens = os.path.join(os.getcwd(), 'data', 'images')
     arquivos_img = [f for f in os.listdir(pasta_imagens) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
     
@@ -56,19 +83,33 @@ def executar_fluxo_multimodal():
     else:
         print("⚠️ Nenhuma imagem encontrada em 'data/images'.")
 
-    # 4. Análise do Agente (Hugging Face)
-    print("\n🧠 [AGENT] Cruzando dados e gerando relatório final...")
-    relatorio = agente.analisar_atendimento(transcricao_final, objetos_encontrados)
+    # 5. Análise do Agente (Hugging Face) - COM ANÁLISE ESPECIALIZADA DE SAÚDE FEMININA
+    print("\n🧠 [AGENT] Cruzando dados e gerando relatório final com análise especializada...")
+    
+    # Análise comportamental visual (simulada para demo)
+    comportamento_observado = "paciente colaborativa, contato visual normal"  # Pode ser expandido com visão computacional real
+    
+    relatorio = agente.analisar_atendimento(
+        transcricao_final, 
+        objetos_encontrados, 
+        objetos_video,
+        comportamento_visual=comportamento_observado
+    )
 
     # 5. Output Final
-    print("\n" + "📋 RELATÓRIO DE CONFORMIDADE MÉDICA".center(60))
+    print("\n" + "📋 RELATÓRIO DE CONFORMIDADE CLÍNICA - SAÚDE DA MULHER".center(60))
     print("-" * 60)
     print(f"✅ STATUS TÉCNICO: {relatorio['Conformidade Técnica']}")
     print(f"🎭 ANÁLISE EMOCIONAL: {relatorio['Análise Emocional']}")
-    print(f"📝 RESUMO: {relatorio['Resumo']}")
+    print(f"🤰 DEPRESSÃO PÓS-PARTO: {relatorio['Depressão Pós-Parto']}")
+    print(f"🚨 RISCO DE VIOLÊNCIA: {relatorio['Risco de Violência']}")
+    print(f"⚕️ COMPLICAÇÕES CLÍNICAS: {relatorio['Complicações Clínicas']}")
+    print(f"🎬 ANÁLISE DE VÍDEO: {relatorio['Análise de Vídeo']}")
+    print(f"🔴 PRIORIDADE DE ATENDIMENTO: {relatorio['Prioridade de Atendimento']}")
+    print(f"📊 SCORE RISCO TOTAL: {relatorio['Score Risco Total']}")
     print("\n🚨 ALERTAS DE SEGURANÇA:")
     for alerta in relatorio['Alertas de Saúde']:
-        print(f"  - {alerta}")
+        print(f"  {alerta}")
     print("-" * 60)
     print("🎯 Processamento Multimodal Concluído.")
 
